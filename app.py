@@ -1,20 +1,38 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import speech_recognition as sr
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# Function to fact-check a statement using an external fact-checking API
+# Function to fact-check using external APIs
 def fact_check(statement):
-    # Simulated response for now (Replace with an actual API call)
-    if statement.lower() in ["the sky is blue", "today is friday", "water is wet"]:
-        return {"Truth Score": 100, "Analysis": "This is a universally accepted fact.", "Correction": "N/A"}
+    statement = statement.lower()
+
+    # Date-based questions
+    if "what day is tomorrow" in statement:
+        tomorrow = (datetime.now() + timedelta(days=1)).strftime("%A")
+        return {"Truth Score": 100, "Analysis": f"Tomorrow is {tomorrow}.", "Correction": "N/A"}
     
-    elif "biden" in statement.lower() or "trump" in statement.lower():
-        return {"Truth Score": 60, "Analysis": "Partial truth detected. Cross-referencing political claims is recommended.", "Correction": "Check reputable sources like Snopes or PolitiFact."}
+    elif "what day was yesterday" in statement:
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%A")
+        return {"Truth Score": 100, "Analysis": f"Yesterday was {yesterday}.", "Correction": "N/A"}
     
-    else:
-        return {"Truth Score": 20, "Analysis": "No supporting factual evidence found.", "Correction": "Refer to official sources for verification."}
+    elif "what day is it" in statement:
+        today = datetime.now().strftime("%A")
+        return {"Truth Score": 100, "Analysis": f"Today is {today}.", "Correction": "N/A"}
+
+    # General Knowledge Lookup (Using Wikipedia API)
+    wiki_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{statement.replace(' ', '_')}"
+    wiki_response = requests.get(wiki_url)
+    
+    if wiki_response.status_code == 200:
+        wiki_data = wiki_response.json()
+        if "extract" in wiki_data:
+            return {"Truth Score": 100, "Analysis": wiki_data["extract"], "Correction": "N/A"}
+
+    # No fact found
+    return {"Truth Score": 0, "Analysis": "No supporting factual evidence found.", "Correction": "Refer to reputable sources for verification."}
 
 @app.route('/')
 def home():
@@ -27,7 +45,6 @@ def fact_check_api():
     result = fact_check(statement)
     return jsonify(result)
 
-# Live speech recognition
 @app.route('/listen', methods=['POST'])
 def listen():
     recognizer = sr.Recognizer()
