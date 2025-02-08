@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Fact-Checker</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 20px; }
+        #container { width: 50%; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input { width: 80%; padding: 10px; margin: 10px 0; font-size: 16px; }
+        button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .result-container { margin-top: 20px; padding: 15px; border-radius: 5px; text-align: left; }
+        .true { background-color: #d4edda; color: #155724; }
+        .false { background-color: #f8d7da; color: #721c24; }
+    </style>
 </head>
 <body>
     <div id="container">
@@ -12,6 +21,7 @@
         <p>Enter a statement below to verify its accuracy.</p>
         <input type="text" id="statement" placeholder="Type a statement here...">
         <button onclick="checkFact()">Check Fact</button>
+        <button onclick="startListening()">🎙️ Live Check</button>
         <div id="loading" style="display:none;">Checking facts... ⏳</div>
         <div id="result"></div>
     </div>
@@ -27,7 +37,7 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById("loading").style.display = "none";
-                let colorClass = data['Truth Score'] > 75 ? "true" : "false";
+                let colorClass = data['Truth Score'] >= 75 ? "true" : "false";
                 document.getElementById("result").innerHTML =
                 `<div class="result-container ${colorClass}">
                     <h3>🔎 Truth Score: ${data['Truth Score']}%</h3>
@@ -38,6 +48,25 @@
             .catch(error => {
                 document.getElementById("loading").style.display = "none";
                 document.getElementById("result").innerHTML = `<p style="color:red;">Error retrieving data. Please try again.</p>`;
+            });
+        }
+
+        function startListening() {
+            fetch('/listen', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("result").innerHTML = 
+                `<div class="result-container">
+                    <h3>🎙️ Heard: "${data.text}"</h3>
+                    <h3>🔎 Truth Score: ${data.result['Truth Score']}%</h3>
+                    <p><strong>Analysis:</strong> ${data.result['Analysis']}</p>
+                    <p><strong>Correction:</strong> ${data.result['Correction']}</p>
+                </div>`;
+            })
+            .catch(error => {
+                document.getElementById("result").innerHTML = `<p style="color:red;">Error with live listening.</p>`;
             });
         }
     </script>
