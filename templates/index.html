@@ -1,1 +1,45 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Fact-Checker</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="container">
+        <h1>🔍 Live Fact-Checker</h1>
+        <p>Enter a statement below to verify its accuracy.</p>
+        <input type="text" id="statement" placeholder="Type a statement here...">
+        <button onclick="checkFact()">Check Fact</button>
+        <div id="loading" style="display:none;">Checking facts... ⏳</div>
+        <div id="result"></div>
+    </div>
+    <script>
+        function checkFact() {
+            let statement = document.getElementById("statement").value;
+            document.getElementById("loading").style.display = "block";
+            fetch('/fact-check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "statement": statement })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("loading").style.display = "none";
+                let colorClass = data['Truth Score'] > 75 ? "true" : "false";
+                document.getElementById("result").innerHTML =
+                `<div class="result-container ${colorClass}">
+                    <h3>🔎 Truth Score: ${data['Truth Score']}%</h3>
+                    <p><strong>Analysis:</strong> ${data['Analysis']}</p>
+                    <p><strong>Correction:</strong> ${data['Correction']}</p>
+                </div>`;
+            })
+            .catch(error => {
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("result").innerHTML = `<p style="color:red;">Error retrieving data. Please try again.</p>`;
+            });
+        }
+    </script>
+</body>
+</html>
