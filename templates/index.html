@@ -52,9 +52,7 @@
         }
 
         function startListening() {
-            fetch('/listen', {
-                method: 'POST'
-            })
+            fetch('/listen', { method: 'POST' })
             .then(response => response.json())
             .then(data => {
                 document.getElementById("result").innerHTML = 
